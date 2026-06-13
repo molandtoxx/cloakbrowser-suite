@@ -51,28 +51,37 @@ else:
     print("[spec] WARNING: frontend/dist/ not found — no UI will be served")
 
 # ── Chromium ────────────────────────────────────────────────────────────
-try:
-    from cloakbrowser.config import get_cache_dir, get_chromium_version, get_binary_dir
+# On macOS, PyInstaller's bincache tries to ad-hoc codesign the Chromium
+# binary, which fails because the .app bundle's framework subcomponents
+# have an incompatible structure. Skip bundling on macOS — cloakbrowser
+# will download Chromium on first launch instead.
+_IS_MACOS = sys.platform == "darwin"
+if _IS_MACOS:
+    print("[spec] macOS detected — skipping Chromium bundling (codesign incompatibility)")
+    print("[spec]   Chromium will download on first launch")
+else:
+    try:
+        from cloakbrowser.config import get_cache_dir, get_chromium_version, get_binary_dir
 
-    _CACHE = get_cache_dir()
-    _VER  = get_chromium_version()
-    _DIR  = get_binary_dir()
+        _CACHE = get_cache_dir()
+        _VER  = get_chromium_version()
+        _DIR  = get_binary_dir()
 
-    if _DIR.is_dir():
-        _mb = sum(f.stat().st_size for f in _DIR.rglob("*") if f.is_file()) / 1_048_576
-        print(f"[spec] Bundling Chromium: {_DIR}  ({_mb:.0f} MiB)")
+        if _DIR.is_dir():
+            _mb = sum(f.stat().st_size for f in _DIR.rglob("*") if f.is_file()) / 1_048_576
+            print(f"[spec] Bundling Chromium: {_DIR}  ({_mb:.0f} MiB)")
 
-        for f in sorted(_DIR.rglob("*")):
-            if f.is_file():
-                _dest_dir = str(f.parent.relative_to(_CACHE))  # e.g. "chromium-{ver}" or "chromium-{ver}/locales"
-                _USER_DATAS.append((str(f), _dest_dir))
+            for f in sorted(_DIR.rglob("*")):
+                if f.is_file():
+                    _dest_dir = str(f.parent.relative_to(_CACHE))
+                    _USER_DATAS.append((str(f), _dest_dir))
 
-        print(f"[spec]   -> Chromium: {len([x for x in _USER_DATAS if 'chromium' in x[1]])} files")
-    else:
-        print(f"[spec] WARNING: Chromium directory not found at {_DIR}")
-        print("[spec]   Bundle will NOT include Chromium — it will download on first launch.")
-except ImportError:
-    print("[spec] WARNING: cloakbrowser not importable — Chromium will NOT be bundled")
+            print(f"[spec]   -> Chromium: {len([x for x in _USER_DATAS if 'chromium' in x[1]])} files")
+        else:
+            print(f"[spec] WARNING: Chromium directory not found at {_DIR}")
+            print("[spec]   Bundle will NOT include Chromium — it will download on first launch.")
+    except ImportError:
+        print("[spec] WARNING: cloakbrowser not importable — Chromium will NOT be bundled")
 
 # ══════════════════════════════════════════════════════════════════════════
 
@@ -151,10 +160,6 @@ a = Analysis(
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-# ── Detect platform ─────────────────────────────────────────────────────
-import platform as _plt
-_IS_MACOS = _plt.system() == "Darwin"
 
 exe = EXE(
     pyz,
