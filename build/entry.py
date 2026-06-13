@@ -34,13 +34,19 @@ if _bundle_dir not in sys.path:
 
 # ── Known server flags (anything else → CLI) ─────────────────────────────
 _SERVER_FLAGS = frozenset({
-    "--port", "--host", "--no-open", "--help",
+    "--port", "--host", "--no-open",
 })
+
+
+def _wants_help(argv: list[str]) -> bool:
+    return "--help" in argv[1:] or "-h" in argv[1:]
 
 
 def _is_server_mode(argv: list[str]) -> bool:
     if len(argv) <= 1:
         return True  # bare executable → server
+    if _wants_help(argv):
+        return False
     for a in argv[1:]:
         if a.startswith("-"):
             if a in _SERVER_FLAGS or a.startswith("--port=") or a.startswith("--host="):
@@ -51,6 +57,25 @@ def _is_server_mode(argv: list[str]) -> bool:
 
 
 def main() -> None:
+    if _wants_help(sys.argv):
+        print("""CloakBrowser Suite — fingerprint browser manager
+
+Usage:
+  cloakbrowser-suite [options]              Start web server (default)
+  cloakbrowser-suite profile list           List profiles
+  cloakbrowser-suite profile create         Create a profile
+  cloakbrowser-suite browser launch <id>    Launch a browser
+  cloakbrowser-suite browser stop <id>      Stop a browser
+  cloakbrowser-suite status                 Show status
+
+Options:
+  --port PORT       Server port (default: 8080)
+  --host HOST       Bind address (default: 127.0.0.1)
+  --no-open         Don't open browser on start
+  -h, --help        Show this help message
+""")
+        sys.exit(0)
+
     if _is_server_mode(sys.argv):
         from backend.main import app
         import uvicorn
