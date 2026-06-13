@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cloakbrowser-suite"
+version = "0.1.0"
+description = "Cross-platform fingerprint browser suite - manage multiple browser profiles with unique fingerprints"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "CloakBrowser Suite" },
+]
+
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
+    "pydantic>=2.0",
+    "cloakbrowser[geoip]>=0.3.31",
+    "websockets>=14.0",
+    "httpx>=0.27.0",
+    "click>=8.0",
+]
+
+[project.scripts]
+cloakbrowser-suite = "cli.main:main"
+
+[tool.setuptools.packages.find]
+include = ["backend*", "cli*", "platform*"]

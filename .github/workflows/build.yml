@@ -1,0 +1,142 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# GitHub Actions — Build & release CloakBrowser Suite for Linux / macOS / Windows
+#
+# Triggers:
+#   - Push to main (creates nightly artifact)
+#   - Tag v*    (creates GitHub Release with pre-built archives)
+#   - PR to main (verifies build, no release)
+# ──────────────────────────────────────────────────────────────────────────────
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Optional release tag (e.g., v0.2.0)"
+        required: false
+        type: string
+
+env:
+  PYTHON_VERSION: "3.11"
+  NODE_VERSION: "20"
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            arch: x64
+            artifact: cloakbrowser-suite-linux-x64.tar.gz
+            build_cmd: bash scripts/build-linux.sh
+            platform: linux
+
+          - os: macos-14  # Apple Silicon runner
+            arch: arm64
+            artifact: CloakBrowser-Suite-macOS-arm64.tar.gz
+            build_cmd: bash scripts/build-macos.sh
+            platform: macos
+
+          - os: windows-2022
+            arch: x64
+            artifact: cloakbrowser-suite-windows-x64.zip
+            build_cmd: powershell .\scripts\build-windows.ps1
+            platform: windows
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Cache Chromium binary (cloakbrowser)
+        id: cache-chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cloakbrowser
+          key: cloakbrowser-chromium-${{ matrix.platform }}-${{ hashFiles('**/pyproject.toml') }}
+
+      - name: Install PyInstaller
+        run: pip install pyinstaller
+
+      - name: Build ${{ matrix.platform }}
+        run: ${{ matrix.build_cmd }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}
+          if-no-files-found: error
+          retention-days: 7
+
+      # ── Smoke test: run --help on the built binary ─────────────────────
+      - name: Smoke test (binary --help)
+        shell: bash
+        run: |
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            BIN="dist/cloakbrowser-suite/cloakbrowser-suite.exe"
+          else
+            BIN="dist/cloakbrowser-suite/cloakbrowser-suite"
+            chmod +x "$BIN"
+          fi
+          "$BIN" --help 2>&1 | head -20
+          echo "--- Smoke test passed ---"
+
+  # ── Create GitHub Release on tag push ──────────────────────────────────
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: CloakBrowser Suite ${{ github.ref_name }}
+          body: |
+            ## CloakBrowser Suite ${{ github.ref_name }}
+
+            ### 📦 Downloads
+
+            | Platform | Architecture | Archive |
+            |----------|-------------|---------|
+            | Linux    | x86_64      | `cloakbrowser-suite-linux-x64.tar.gz` |
+            | macOS    | Apple Silicon | `CloakBrowser-Suite-macOS-arm64.tar.gz` |
+            | Windows  | x86_64      | `cloakbrowser-suite-windows-x64.zip` |
+
+            > **No dependencies required.** Each archive contains a standalone binary
+            > with Python runtime **and Chromium** (~700 MB) bundled. Unpack and run —
+            > no network needed. Chromium auto-updates on first launch if a newer
+            > version is available.
+          files: |
+            release-artifacts/**/*
+          draft: false
+          prerelease: false

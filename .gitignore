@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/__pycache__/
+.eggs/
+*.egg
+
+# But keep PyInstaller config files in build/
+!build/*.py
+!build/*.spec
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project data
+*.db
+/venv/
+.venv/
+
+# Environment
+.env
+.env.local
