@@ -26,7 +26,7 @@ _PROJ = Path.cwd().resolve()
 #  Chromium bundling — detect & queue every file under chromium-{ver}/
 # ══════════════════════════════════════════════════════════════════════════
 
-_CHROMIUM_DATAS: list[tuple[str, str]] = []
+_USER_DATAS: list[tuple[str, str, str]] = []
 
 try:
     from cloakbrowser.config import get_cache_dir, get_chromium_version, get_binary_dir
@@ -42,14 +42,26 @@ try:
         for f in sorted(_DIR.rglob("*")):
             if f.is_file():
                 _rel = str(f.relative_to(_CACHE))   # "chromium-{ver}/chrome"
-                _CHROMIUM_DATAS.append((str(f), _rel))
+                # Internal TOC format: (dest_path, source_path, typecode)
+                _USER_DATAS.append((_rel, str(f), 'DATA'))
 
-        print(f"[spec]   → {len(_CHROMIUM_DATAS)} files")
+        print(f"[spec]   → {len(_USER_DATAS)} files")
     else:
         print(f"[spec] WARNING: Chromium directory not found at {_DIR}")
         print(f"[spec]   Bundle will NOT include Chromium — it will download on first launch.")
 except ImportError:
     print("[spec] WARNING: cloakbrowser not importable — Chromium will NOT be bundled")
+
+# ── Also bundle frontend dist/ ──────────────────────────────────────────
+_FRONTEND = _PROJ / "frontend" / "dist"
+if _FRONTEND.is_dir():
+    for f in sorted(_FRONTEND.rglob("*")):
+        if f.is_file():
+            _rel = str(f.relative_to(_FRONTEND.parent))  # "frontend/dist/..."
+            _USER_DATAS.append((_rel, str(f), 'DATA'))
+    print(f"[spec] Frontend: {len([x for x in _USER_DATAS if x[0].startswith('frontend')])} files")
+else:
+    print("[spec] WARNING: frontend/dist/ not found — no UI will be served")
 
 # ══════════════════════════════════════════════════════════════════════════
 
@@ -59,7 +71,7 @@ a = Analysis(
     [str(_PROJ / "build" / "entry.py")],
     pathex=[str(_PROJ)],
     binaries=[],
-    datas=_CHROMIUM_DATAS,            # Chromium files included here
+    datas=_USER_DATAS,                # Chromium + frontend all go through constructor
     hiddenimports=[
         "backend.main",
         "backend.database",
@@ -68,17 +80,9 @@ a = Analysis(
         "cli.main",
         "cloakbrowser",
         "cloakbrowser.config",
-        "cloakbrowser.core",
-        "cloakbrowser.core.persistent_context",
-        "cloakbrowser.fingerprint",
-        "cloakbrowser.geoip",
-        "cloakbrowser.geoip.mmdb_reader",
-        "cloakbrowser.platform.windows",
-        "cloakbrowser.platform.linux",
-        "cloakbrowser.platform.darwin",
-        "cloakbrowser.proxy",
-        "cloakbrowser.protected_cookie",
+        "cloakbrowser.browser",
         "cloakbrowser.download",
+        "cloakbrowser.geoip",
         "uvicorn",
         "uvicorn.logging",
         "uvicorn.loops.auto",
@@ -116,15 +120,6 @@ a = Analysis(
     cipher=block_cipher,
     noarchive=False,
 )
-
-# ── Also bundle frontend dist/ ──────────────────────────────────────────
-_FRONTEND = _PROJ / "frontend" / "dist"
-if _FRONTEND.is_dir():
-    for f in sorted(_FRONTEND.rglob("*")):
-        if f.is_file():
-            a.datas.append((str(f), str(f.relative_to(_FRONTEND.parent))))
-else:
-    print("[spec] WARNING: frontend/dist/ not found — no UI will be served")
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
