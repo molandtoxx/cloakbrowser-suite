@@ -141,7 +141,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name="CloakBrowser Suite" if _IS_MACOS else "cloakbrowser-suite",
+    name="cloakbrowser-suite",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -155,34 +155,13 @@ exe = EXE(
     contents_directory="_internal",
 )
 
-if _IS_MACOS:
-    coll = BUNDLE(
-        exe,
-        a.binaries,
-        a.zipfiles,
-        a.datas,
-        name="CloakBrowser Suite",
-        icon=str(_PROJ / "build" / "icon.icns") if (_PROJ / "build" / "icon.icns").exists() else None,
-        version="0.1.0",
-        info_plist={
-            "NSHighResolutionCapable": True,
-            "NSRequiresAquaSystemAppearance": False,
-            "CFBundleName": "CloakBrowser Suite",
-            "CFBundleDisplayName": "CloakBrowser Suite",
-            "CFBundleIdentifier": "com.cloakbrowser.suite",
-            "CFBundleVersion": "0.1.0",
-            "CFBundleShortVersionString": "0.1.0",
-            "NSHumanReadableCopyright": "MIT License",
-        },
-    )
-else:
-    coll = COLLECT(
-        exe,
-        a.binaries,
-        a.zipfiles,
-        a.datas,
-        strip=False,
-        upx=False,
-        upx_exclude=[],
-        name="cloakbrowser-suite",
-    )
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    name="cloakbrowser-suite",
+)
