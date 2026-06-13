@@ -11,6 +11,7 @@ import hmac
 import logging
 import os
 import subprocess
+import sys
 from contextlib import asynccontextmanager
 from http.cookies import SimpleCookie
 from pathlib import Path
@@ -151,7 +152,13 @@ class AuthMiddleware:
 
 browser_mgr = BrowserManager()
 
-FRONTEND_DIR = Path(__file__).parent.parent / "frontend" / "dist"
+# Resolve frontend directory: in PyInstaller --onedir mode, data files live
+# under sys._MEIPASS (the _internal/ directory).  In dev mode, use __file__.
+_MEIPASS = getattr(sys, "_MEIPASS", None)
+if getattr(sys, "frozen", False) and _MEIPASS is not None:
+    FRONTEND_DIR = Path(_MEIPASS) / "frontend" / "dist"
+else:
+    FRONTEND_DIR = Path(__file__).parent.parent / "frontend" / "dist"
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────

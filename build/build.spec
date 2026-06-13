@@ -36,12 +36,16 @@ _PROJ = Path.cwd().resolve()
 _USER_DATAS: list[tuple[str, str]] = []
 
 # ── Frontend dist/ ──────────────────────────────────────────────────────
+# PyInstaller datas format: (source_file, dest_directory)
+# dest MUST be a directory path relative to the bundle root, NOT a file path.
+# If dest includes the filename, PyInstaller creates a directory named after
+# the file and nests the file inside it.
 _FRONTEND = _PROJ / "frontend" / "dist"
 if _FRONTEND.is_dir():
     for f in sorted(_FRONTEND.rglob("*")):
         if f.is_file():
-            _rel = str(f.relative_to(_FRONTEND.parent))   # "frontend/dist/..."
-            _USER_DATAS.append((str(f), _rel))
+            _dest_dir = str(f.parent.relative_to(_PROJ))  # e.g. "frontend/dist" or "frontend/dist/assets"
+            _USER_DATAS.append((str(f), _dest_dir))
     print(f"[spec] Frontend: {len([x for x in _USER_DATAS if 'frontend' in x[1]])} files")
 else:
     print("[spec] WARNING: frontend/dist/ not found — no UI will be served")
@@ -60,8 +64,8 @@ try:
 
         for f in sorted(_DIR.rglob("*")):
             if f.is_file():
-                _rel = str(f.relative_to(_CACHE))   # "chromium-{ver}/chrome"
-                _USER_DATAS.append((str(f), _rel))
+                _dest_dir = str(f.parent.relative_to(_CACHE))  # e.g. "chromium-{ver}" or "chromium-{ver}/locales"
+                _USER_DATAS.append((str(f), _dest_dir))
 
         print(f"[spec]   -> Chromium: {len([x for x in _USER_DATAS if 'chromium' in x[1]])} files")
     else:
