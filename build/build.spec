@@ -122,7 +122,7 @@ a = Analysis(
         "notebook", "jupyter", "boto3", "botocore",
         "tensorflow", "torch",
         "setuptools", "pip", "wheel",
-        "test", "unittest", "email", "http.server",
+        "test", "unittest", "http.server",
     ],
     cipher=block_cipher,
     noarchive=False,
