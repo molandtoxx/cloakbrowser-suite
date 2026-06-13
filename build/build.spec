@@ -63,7 +63,7 @@ try:
                 _rel = str(f.relative_to(_CACHE))   # "chromium-{ver}/chrome"
                 _USER_DATAS.append((str(f), _rel))
 
-        print(f"[spec]   → Chromium: {len([x for x in _USER_DATAS if 'chromium' in x[1]])} files")
+        print(f"[spec]   -> Chromium: {len([x for x in _USER_DATAS if 'chromium' in x[1]])} files")
     else:
         print(f"[spec] WARNING: Chromium directory not found at {_DIR}")
         print("[spec]   Bundle will NOT include Chromium — it will download on first launch.")
