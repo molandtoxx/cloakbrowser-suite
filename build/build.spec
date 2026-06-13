@@ -70,17 +70,6 @@ try:
 except ImportError:
     print("[spec] WARNING: cloakbrowser not importable — Chromium will NOT be bundled")
 
-# ── Also bundle frontend dist/ ──────────────────────────────────────────
-_FRONTEND = _PROJ / "frontend" / "dist"
-if _FRONTEND.is_dir():
-    for f in sorted(_FRONTEND.rglob("*")):
-        if f.is_file():
-            _rel = str(f.relative_to(_FRONTEND.parent))  # "frontend/dist/..."
-            _USER_DATAS.append((_rel, str(f), 'DATA'))
-    print(f"[spec] Frontend: {len([x for x in _USER_DATAS if x[0].startswith('frontend')])} files")
-else:
-    print("[spec] WARNING: frontend/dist/ not found — no UI will be served")
-
 # ══════════════════════════════════════════════════════════════════════════
 
 block_cipher = None
