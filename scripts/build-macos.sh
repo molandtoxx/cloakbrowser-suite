@@ -27,9 +27,9 @@ cd ..
 
 echo "=== 3/5  Downloading Chromium (cloakbrowser) ==="
 python3 -c "
-from cloakbrowser.download import download_chromium
-download_chromium()
-print('Chromium downloaded')
+from cloakbrowser.download import ensure_binary
+path = ensure_binary()
+print(f'Chromium ready: {path}')
 "
 
 echo "=== 4/5  Running PyInstaller ==="
