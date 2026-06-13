@@ -26,14 +26,33 @@ _PROJ = Path.cwd().resolve()
 #  Chromium bundling — detect & queue every file under chromium-{ver}/
 # ══════════════════════════════════════════════════════════════════════════
 
-_USER_DATAS: list[tuple[str, str, str]] = []
+# ══════════════════════════════════════════════════════════════════════════
+#  Data files: Chromium + frontend dist/
+#  Analysis(datas=...) expects (source_path, dest_path) 2-tuples.
+#  DO NOT append to a.datas after Analysis — the internal format is
+#  (dest, src, 'DATA') 3-tuples and mixing formats breaks normalize_toc.
+# ══════════════════════════════════════════════════════════════════════════
 
+_USER_DATAS: list[tuple[str, str]] = []
+
+# ── Frontend dist/ ──────────────────────────────────────────────────────
+_FRONTEND = _PROJ / "frontend" / "dist"
+if _FRONTEND.is_dir():
+    for f in sorted(_FRONTEND.rglob("*")):
+        if f.is_file():
+            _rel = str(f.relative_to(_FRONTEND.parent))   # "frontend/dist/..."
+            _USER_DATAS.append((str(f), _rel))
+    print(f"[spec] Frontend: {len([x for x in _USER_DATAS if 'frontend' in x[1]])} files")
+else:
+    print("[spec] WARNING: frontend/dist/ not found — no UI will be served")
+
+# ── Chromium ────────────────────────────────────────────────────────────
 try:
     from cloakbrowser.config import get_cache_dir, get_chromium_version, get_binary_dir
 
-    _CACHE = get_cache_dir()          # ~/.cloakbrowser/
-    _VER  = get_chromium_version()    # e.g. "146.0.7680.177.5"
-    _DIR  = get_binary_dir()          # ~/.cloakbrowser/chromium-{ver}/
+    _CACHE = get_cache_dir()
+    _VER  = get_chromium_version()
+    _DIR  = get_binary_dir()
 
     if _DIR.is_dir():
         _mb = sum(f.stat().st_size for f in _DIR.rglob("*") if f.is_file()) / 1_048_576
@@ -42,13 +61,12 @@ try:
         for f in sorted(_DIR.rglob("*")):
             if f.is_file():
                 _rel = str(f.relative_to(_CACHE))   # "chromium-{ver}/chrome"
-                # Internal TOC format: (dest_path, source_path, typecode)
-                _USER_DATAS.append((_rel, str(f), 'DATA'))
+                _USER_DATAS.append((str(f), _rel))
 
-        print(f"[spec]   → {len(_USER_DATAS)} files")
+        print(f"[spec]   → Chromium: {len([x for x in _USER_DATAS if 'chromium' in x[1]])} files")
     else:
         print(f"[spec] WARNING: Chromium directory not found at {_DIR}")
-        print(f"[spec]   Bundle will NOT include Chromium — it will download on first launch.")
+        print("[spec]   Bundle will NOT include Chromium — it will download on first launch.")
 except ImportError:
     print("[spec] WARNING: cloakbrowser not importable — Chromium will NOT be bundled")
 
