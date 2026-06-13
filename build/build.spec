@@ -17,7 +17,10 @@ import os
 import sys
 from pathlib import Path
 
-_PROJ = Path(__file__).resolve().parent.parent
+# NOTE: PyInstaller exec's the spec file in a restricted namespace
+# without __file__.  We rely on cwd() being the project root (all
+# build scripts cd to project root before invoking pyinstaller).
+_PROJ = Path.cwd().resolve()
 
 # ══════════════════════════════════════════════════════════════════════════
 #  Chromium bundling — detect & queue every file under chromium-{ver}/
