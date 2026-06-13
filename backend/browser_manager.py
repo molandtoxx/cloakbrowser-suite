@@ -348,8 +348,13 @@ class BrowserManager:
         args: list[str] = [
             "--disable-infobars",
             "--test-type",
-            "--use-angle=swiftshader",
         ]
+
+        # SwiftShader (software GPU) causes address bar to not render on
+        # Windows and conflicts with GPU renderer spoofing.  Only use it on
+        # headless Linux where no real GPU is available.
+        if self._platform_config.name == "linux" and is_headless():
+            args.append("--use-angle=swiftshader")
 
         # Add platform-specific extra args
         args.extend(self._platform_config.extra_chrome_args)
