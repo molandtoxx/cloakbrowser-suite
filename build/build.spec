@@ -137,10 +137,8 @@ _IS_MACOS = _plt.system() == "Darwin"
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
     [],
+    exclude_binaries=True,
     name="cloakbrowser-suite",
     debug=False,
     bootloader_ignore_signals=False,
@@ -152,8 +150,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    onedir=True,
-    contents_directory="_internal",
 )
 
 coll = COLLECT(
