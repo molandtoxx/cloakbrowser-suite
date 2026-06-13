@@ -22,6 +22,7 @@ Set-Location frontend
 npm install --silent
 npm run build
 Set-Location ..
+if (!(Test-Path frontend/dist/index.html)) { throw "frontend/dist/index.html not found — frontend build may have failed" }
 
 Write-Host "=== 3/5  Downloading Chromium (cloakbrowser) ==="
 python -c "from cloakbrowser.download import ensure_binary; path = ensure_binary(); print(f'Chromium ready: {path}')"

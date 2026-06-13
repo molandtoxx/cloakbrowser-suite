@@ -23,6 +23,7 @@ cd frontend
 npm install --silent
 npm run build
 cd ..
+test -f frontend/dist/index.html || { echo "ERROR: frontend/dist/index.html not found — frontend build may have failed"; exit 1; }
 
 echo "=== 3/5  Downloading Chromium (cloakbrowser) ==="
 python3 -c "
