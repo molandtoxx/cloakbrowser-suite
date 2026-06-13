@@ -34,8 +34,8 @@ print(f'Chromium ready: {path}')
 "
 
 echo "=== 4/5  Running PyInstaller ==="
-# Clear PyInstaller binary cache to avoid stale codesign failures on macOS
 rm -rf ~/Library/Application\ Support/pyinstaller/bincache* 2>/dev/null || true
+export PYINSTALLER_STRICT_BIN_CACHE=0
 pyinstaller build/build.spec --clean --noconfirm
 
 echo "=== 5/5  Creating archive ==="
