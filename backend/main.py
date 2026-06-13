@@ -10,6 +10,7 @@ import asyncio
 import hmac
 import logging
 import os
+import subprocess
 from contextlib import asynccontextmanager
 from http.cookies import SimpleCookie
 from pathlib import Path
@@ -24,6 +25,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from . import database as db
 from .browser_manager import BrowserManager
+from .config import detect_chromium, load_config, resolve_chromium_path, save_config
 from .models import (
     ClipboardRequest,
     LaunchResponse,
@@ -32,6 +34,8 @@ from .models import (
     ProfileResponse,
     ProfileStatusResponse,
     ProfileUpdate,
+    SettingsResponse,
+    SettingsUpdate,
     StatusResponse,
     TagResponse,
 )
@@ -592,6 +596,85 @@ async def cdp_page_proxy(websocket: WebSocket, profile_id: str, path: str):
 
     target_url = f"ws://127.0.0.1:{running.cdp_port}/devtools/{path}"
     await _proxy_cdp_websocket(websocket, target_url, f"CDP page proxy [{profile_id}]")
+
+
+# ── Settings ───────────────────────────────────────────────────────────────
+
+
+@app.get("/api/settings", response_model=SettingsResponse)
+async def get_settings():
+    """Return current settings including resolved Chromium info."""
+    config = load_config()
+    chromium_path = config.get("chromium_path")
+    resolved = resolve_chromium_path()
+
+    version = None
+    if resolved:
+        try:
+            result = subprocess.run(
+                [resolved, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if result.returncode == 0:
+                version = result.stdout.strip().split()[-1] if result.stdout.strip() else None
+        except Exception:
+            pass
+
+    return SettingsResponse(
+        chromium_path=chromium_path,
+        chromium_resolved=resolved,
+        chromium_version=version,
+    )
+
+
+@app.patch("/api/settings", response_model=SettingsResponse)
+async def update_settings(req: SettingsUpdate):
+    """Update settings. Set chromium_path to empty string to clear (revert to auto-download)."""
+    config = load_config()
+
+    if req.chromium_path is not None:
+        if req.chromium_path.strip() == "":
+            config.pop("chromium_path", None)
+        else:
+            result = detect_chromium(req.chromium_path)
+            if not result["valid"]:
+                raise HTTPException(status_code=400, detail=result["error"])
+            config["chromium_path"] = req.chromium_path
+
+    save_config(config)
+
+    # Re-resolve after saving
+    resolved = resolve_chromium_path()
+    version = None
+    if resolved:
+        try:
+            result = subprocess.run(
+                [resolved, "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+            if result.returncode == 0:
+                version = result.stdout.strip().split()[-1] if result.stdout.strip() else None
+        except Exception:
+            pass
+
+    return SettingsResponse(
+        chromium_path=config.get("chromium_path"),
+        chromium_resolved=resolved,
+        chromium_version=version,
+    )
+
+
+@app.post("/api/settings/chromium/detect")
+async def detect_chromium_path(req: SettingsUpdate):
+    """Test if a given path resolves to a valid Chromium binary."""
+    if not req.chromium_path:
+        raise HTTPException(status_code=400, detail="chromium_path is required")
+
+    return detect_chromium(req.chromium_path)
 
 
 # ── Static Frontend ───────────────────────────────────────────────────────────

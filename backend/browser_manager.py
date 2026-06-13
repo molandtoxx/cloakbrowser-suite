@@ -18,6 +18,7 @@ from typing import Any
 
 from cloakbrowser import launch_persistent_context_async
 
+from .config import resolve_chromium_path
 from compat import get_config as get_platform_config, is_headless
 
 logger = logging.getLogger("cloakbrowser.suite.browser")
@@ -198,6 +199,13 @@ class BrowserManager:
             proxy = _normalize_proxy(raw_proxy) if raw_proxy else None
             if proxy:
                 _validate_proxy(proxy)
+
+            # Use configured Chromium path if set, otherwise auto-download
+            custom_path = resolve_chromium_path()
+            if custom_path:
+                os.environ["CLOAKBROWSER_BINARY_PATH"] = custom_path
+            else:
+                os.environ.pop("CLOAKBROWSER_BINARY_PATH", None)
 
             # Build environment: start with platform-specific env (DISPLAY on Linux)
             env = dict(os.environ)

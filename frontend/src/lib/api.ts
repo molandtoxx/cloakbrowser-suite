@@ -111,6 +111,23 @@ async function request<T>(
   }
 }
 
+export interface Settings {
+  chromium_path: string | null;
+  chromium_resolved: string | null;
+  chromium_version: string | null;
+}
+
+export interface SettingsUpdate {
+  chromium_path?: string | null;
+}
+
+export interface ChromiumDetectResult {
+  valid: boolean;
+  path: string;
+  version?: string | null;
+  error?: string;
+}
+
 export const api = {
   authStatus: () =>
     request<{ auth_required: boolean; authenticated: boolean }>("/api/auth/status"),
@@ -161,4 +178,18 @@ export const api = {
       if (!r.ok) throw new Error("Screenshot failed");
       return r.blob();
     }),
+
+  settings: {
+    get: () => request<Settings>("/api/settings"),
+    update: (data: SettingsUpdate) =>
+      request<Settings>("/api/settings", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+    detect: (chromium_path: string) =>
+      request<ChromiumDetectResult>("/api/settings/chromium/detect", {
+        method: "POST",
+        body: JSON.stringify({ chromium_path }),
+      }),
+  },
 };

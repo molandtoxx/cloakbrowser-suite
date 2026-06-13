@@ -223,3 +223,8 @@ def delete_profile(profile_id: str) -> bool:
         cursor = conn.execute("DELETE FROM profiles WHERE id = ?", (profile_id,))
         conn.commit()
         return cursor.rowcount > 0
+
+
+def get_data_dir() -> str:
+    """Return the data directory path (parent of the database file)."""
+    return str(DB_PATH.parent)

@@ -133,3 +133,13 @@ class ClipboardRequest(BaseModel):
 
 class LoginRequest(BaseModel):
     token: str
+
+
+class SettingsUpdate(BaseModel):
+    chromium_path: str | None = None
+
+
+class SettingsResponse(BaseModel):
+    chromium_path: str | None
+    chromium_resolved: str | None
+    chromium_version: str | None

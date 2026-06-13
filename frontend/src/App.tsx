@@ -1,16 +1,17 @@
 import { useState, useCallback, useEffect } from "react";
-import { Lock, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Lock, PanelLeftClose, PanelLeft, Monitor } from "lucide-react";
 import { useProfiles } from "./hooks/useProfiles";
 import { api, setOnUnauthorized, type ProfileCreateData } from "./lib/api";
 import { ProfileList } from "./components/ProfileList";
 import { ProfileForm } from "./components/ProfileForm";
 import { ProfileViewer } from "./components/ProfileViewer";
 import { LaunchButton } from "./components/LaunchButton";
+import { Settings } from "./components/Settings";
 import { StatusIndicator } from "./components/StatusIndicator";
 import { LoginPage } from "./components/LoginPage";
 
 type AuthState = "checking" | "required" | "ok" | "error";
-type View = "empty" | "create" | "edit" | "view";
+type View = "empty" | "create" | "edit" | "view" | "settings";
 
 export default function App() {
   const [authState, setAuthState] = useState<AuthState>("checking");
@@ -158,6 +159,15 @@ function AppContent({ authRequired, onLogout }: AppContentProps) {
             onSelect={handleSelect}
             onNew={handleNew}
           />
+          <div className="p-3 border-t border-border mt-auto">
+            <button
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-400 hover:text-gray-200 hover:bg-surface-2 rounded-lg transition-colors"
+              onClick={() => setView("settings")}
+            >
+              <Monitor className="h-4 w-4" />
+              Settings
+            </button>
+          </div>
         </div>
       )}
 
@@ -237,6 +247,8 @@ function AppContent({ authRequired, onLogout }: AppContentProps) {
               }}
             />
           )}
+
+          {view === "settings" && <Settings />}
 
           {view === "view" && selected && selected.status === "running" && (
             <ProfileViewer
