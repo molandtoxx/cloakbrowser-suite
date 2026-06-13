@@ -10,8 +10,8 @@
 # Usage:
 #   bash scripts/build-macos.sh
 #
-# Output: dist/CloakBrowser Suite.app/  (macOS .app bundle)
-#         dist/CloakBrowser Suite-macOS-arm64.tar.gz
+# Output: dist/cloakbrowser-suite/     (single-directory bundle)
+#         dist/CloakBrowser-Suite-macOS-<arch>.tar.gz
 # ──────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -27,17 +27,17 @@ cd ..
 
 echo "=== 3/5  Downloading Chromium (cloakbrowser) ==="
 python3 -c "
-from cloakbrowser.download import ensure_binary
-path = ensure_binary()
-print(f'Chromium ready: {path}')
+from cloakbrowser.download import download_chromium
+download_chromium()
+print('Chromium downloaded')
 "
 
-echo "=== 4/5  Running PyInstaller (creates .app bundle) ==="
+echo "=== 4/5  Running PyInstaller ==="
 pyinstaller build/build.spec --clean --noconfirm
 
 echo "=== 5/5  Creating archive ==="
 cd dist
 ARCHIVE="CloakBrowser-Suite-macOS-$(uname -m).tar.gz"
-# macOS .app is a directory → tar it
-tar czf "$ARCHIVE" "CloakBrowser Suite.app/"
+# Bundle is a single-directory tar
+tar czf "$ARCHIVE" cloakbrowser-suite/
 echo "===> dist/$ARCHIVE  ($(du -sh "$ARCHIVE" | cut -f1))"

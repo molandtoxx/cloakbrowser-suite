@@ -24,7 +24,7 @@ npm run build
 Set-Location ..
 
 Write-Host "=== 3/5  Downloading Chromium (cloakbrowser) ==="
-python -c "from cloakbrowser.download import ensure_binary; path = ensure_binary(); print(f'Chromium ready: {path}')"
+python -c "from cloakbrowser.download import download_chromium; download_chromium(); print('Chromium downloaded')"
 
 Write-Host "=== 4/5  Running PyInstaller ==="
 pyinstaller build/build.spec --clean --noconfirm
